@@ -24,4 +24,6 @@ A web application for sharing and discovering recipes, built with Laravel.
 3. TEST backend endpoints
 4. Auth with JWT
 
-
+## Future Idea
+1. "Fork" recipes and allow users to modify it for their own
+2. Suggest improvements or changes to other user's recipes
