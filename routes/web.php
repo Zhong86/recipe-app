@@ -14,9 +14,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-
-    //my-recipe
-    Route::get('/my-recipes', [RecipeController::class, '']);
 });
 
 Route::middleware('auth')->group(function () {
@@ -27,6 +24,10 @@ Route::middleware('auth')->group(function () {
     //recipe
     Route::get('/recipes/create', [RecipeController::class, 'create'])->name('create');
     Route::post('/recipes/create', [RecipeController::class, 'store']);
-    Route::get('/recipes/update', [RecipeController::class, 'edit']);
-    Route::post('/recipes/update', [RecipeController::class, 'update']);
+    Route::get('/recipes/{recipe}/edit', [RecipeController::class, 'edit']);
+    Route::post('/recipes/{recipe}/update', [RecipeController::class, 'update']);
+    Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy']);
+
+    //my-recipe
+    Route::get('/my-recipes', [RecipeController::class, 'indexUser']);
 });

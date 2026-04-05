@@ -7,6 +7,7 @@ use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class RecipeController extends Controller
 {
@@ -19,6 +20,15 @@ class RecipeController extends Controller
         $recipes = Recipe::with(['user', 'ingredients', 'tags'])
             ->latest()
             ->paginate(12);
+        return view('recipes/index', compact('recipes'));
+    }
+
+    public function indexUser() {
+        $recipes = Recipe::where('user_id', auth()->id())
+            ->with(['ingredients', 'tags'])
+            ->latest()
+            ->paginate(12);
+
         return view('recipes/index', compact('recipes'));
     }
 
@@ -37,6 +47,7 @@ class RecipeController extends Controller
     {
         $data = $request->validate([
             'title'       => 'required|string|max:255',
+            'description' => 'nullable|string',
             'cook_time'   => 'required|integer',
             'serving'     => 'required|integer',
             'category'    => 'required|in:breakfast,lunch,dinner,snack,dessert,drink',
@@ -87,7 +98,7 @@ class RecipeController extends Controller
             }
         });
 
-        return redirect()->route('/')
+        return redirect()->route('recipes/index')
             ->with('success', 'Recipe created successfully');
     }
 
@@ -110,7 +121,7 @@ class RecipeController extends Controller
             ->findOrFail($id);
         if($recipe->user_id !== auth()->id()) abort(403);
 
-        return view('recipes/edit', compact('recipe'));
+        return view('recipes/create', compact('recipe'));
     }
 
     /**
@@ -181,8 +192,7 @@ class RecipeController extends Controller
             }
         });
 
-        return redirect()->route('/recipe', $recipe->id)
-            ->with('success', 'Recipe updated successfully');
+        return redirect(url('/recipe/'.$recipe->id));
     }
 
     /**
