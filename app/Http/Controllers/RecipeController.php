@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Recipe;
+use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class RecipeController extends Controller
 {
@@ -11,7 +15,11 @@ class RecipeController extends Controller
      */
     public function index()
     {
-
+        //display the tags, image,
+        $recipes = Recipe::with(['user', 'ingredients', 'tags'])
+            ->latest()
+            ->paginate(12);
+        return view('recipes/index', compact('recipes'));
     }
 
     /**
@@ -19,7 +27,7 @@ class RecipeController extends Controller
      */
     public function create()
     {
-        //
+        return view('recipes/create');
     }
 
     /**
@@ -27,15 +35,70 @@ class RecipeController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'title'       => 'required|string|max:255',
+            'cook_time'   => 'required|integer',
+            'serving'     => 'required|integer',
+            'category'    => 'required|in:breakfast,lunch,dinner,snack,dessert,drink',
+            'ingredients'           => 'required|array|min:1',
+            'ingredients.*.name'    => 'required|string',
+            'ingredients.*.quantity'=> 'required|numeric',
+            'ingredients.*.unit'    => 'required|in:tsp,tbsp,cup,ml,l,g,kg,oz,lb,piece,slice,pinch,bunch',
+            'steps'                  => 'required|array|min:1',
+            'steps.*'                => 'required|string',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string'
+        ]);
+
+        $imageUrl = '';
+        if ($request->hasFile('image')) {
+            $imageUrl = Storage::disk('s3')->url(
+                Storage::disk('s3')->putFile('recipes', $request->file('image'), 'public')
+            );
+        }
+
+        DB::transaction(function() use ($data, $imageUrl) {
+            $recipe = Recipe::create([
+                'user_id' => auth()->id(),
+                'title' => $data['title'],
+                'description' => $data['description'],
+                'cook_time' => $data['cook_time'],
+                'serving' => $data['serving'],
+                'category' => $data['category'],
+                'image_url' =>  $imageUrl
+            ]);
+
+            foreach($data['ingredients'] as $ingredient) {
+                $recipe->ingredients()->create($ingredient);
+            }
+
+            foreach ($data['steps'] as $order => $instruction) {
+                $recipe->steps()->create([
+                    'order' => $order + 1,
+                    'instruction' => $instruction
+                ]);
+            }
+
+            if (!empty($data['tags'])) {
+                $tagIds = collect($data['tags'])->map(function ($tagName) {
+                    return Tag::firstOrCreate(['name' => $tagName])->id;
+                });
+                $recipe->tags()->sync($tagIds);
+            }
+        });
+
+        return redirect()->route('/')
+            ->with('success', 'Recipe created successfully');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Recipe $recipe)
     {
-        //
+        $recipe->load(['user', 'ingredients', 'steps', 'reviews.user', 'tags']);
+
+        return view('recipes/recipe', compact('recipe'));
     }
 
     /**
@@ -43,7 +106,11 @@ class RecipeController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $recipe = Recipe::with(['ingredients', 'steps', 'tags'])
+            ->findOrFail($id);
+        if($recipe->user_id !== auth()->id()) abort(403);
+
+        return view('recipes/edit', compact('recipe'));
     }
 
     /**
@@ -51,7 +118,71 @@ class RecipeController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $recipe = Recipe::findOrFail($id);
+
+        if ($recipe->user_id !== auth()->id()) abort(403);
+
+        $data = $request->validate([
+            'title'                  => 'required|string|max:255',
+            'description'            => 'nullable|string',
+            'cook_time'              => 'required|integer|min:1',
+            'serving'                => 'required|integer|min:1',
+            'category'               => 'required|in:breakfast,lunch,dinner,snack,dessert,drink',
+            'image'                  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ingredients'            => 'required|array|min:1',
+            'ingredients.*.name'     => 'required|string',
+            'ingredients.*.quantity' => 'required|numeric|min:0',
+            'ingredients.*.unit'     => 'required|in:tsp,tbsp,cup,ml,l,g,kg,oz,lb,piece,slice,pinch,bunch',
+            'steps'                  => 'required|array|min:1',
+            'steps.*'                => 'required|string',
+        ]);
+
+        if ($request->hasFile('image')) {
+            if($recipe->image_url) {
+                Storage::disk('s3')->delete(parse_url($recipe->image_url, PHP_URL_PATH));
+            }
+
+            $data['image_url'] = Storage::disk('s3')->url(
+                Storage::disk('s3')->putFile('recipes', $request->file('image'), 'public')
+            );
+        }
+
+        DB::transaction(function () use ($recipe, $data){
+            $recipe->update([
+                'title' => $data['title'],
+                'description' => $data['description'] ?? null,
+                'cook_time' => $data['cook_time'],
+                'serving' => $data['serving'],
+                'category' => $data['category'],
+                'image_url' => $data['image_url'] ?? $recipe->image_url
+            ]);
+
+            $recipe->ingredients()->delete();
+            foreach ($data['ingredients'] as $ingredient) {
+                $recipe->ingredients()->create($ingredient);
+
+            }
+
+            $recipe->steps()->delete();
+            foreach ($data['steps'] as $order => $instruction) {
+                $recipe->steps()->create([
+                    'order' => $order + 1,
+                    'instruction' => $instruction
+                ]);
+            }
+
+            if (isset($data['tags'])) {
+                $tagIds = collect($data['tags'])->map(function ($tagName) {
+                    return Tag::firstOrCreate(['name' => $tagName])->id;
+                });
+                $recipe->tags()->sync($tagIds);
+            } else {
+                $recipe->tags()->sync([]);
+            }
+        });
+
+        return redirect()->route('/recipe', $recipe->id)
+            ->with('success', 'Recipe updated successfully');
     }
 
     /**
@@ -59,6 +190,17 @@ class RecipeController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $recipe = Recipe::findOrFail($id);
+
+        if ($recipe->user_id !== auth()->id()) abort(403);
+
+        if ($recipe->image_url) {
+            Storage::disk('s3')->delete(parse_url($recipe->image_url, PHP_URL_PATH));
+        }
+
+        $recipe->delete();
+
+        return redirect()->route('/')
+            ->with('success', 'Recipe deleted');
     }
 }

@@ -22,7 +22,7 @@ return new class extends Migration
                 ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'drink']
             );
             $table->string('image_url');
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
         });
     }
 

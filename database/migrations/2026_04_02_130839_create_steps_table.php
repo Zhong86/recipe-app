@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('recipe_id')->constrained()->cascadeOnDelete();
             $table->integer('order');
             $table->text('instruction');
+            $table->timestamps();
         });
     }
 

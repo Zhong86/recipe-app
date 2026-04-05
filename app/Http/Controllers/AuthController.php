@@ -16,13 +16,13 @@ class AuthController extends Controller
 
     public function register(Request $request) {
         $data = $request->validate([
-            'username' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()]
+            'password' => ['required', Password::defaults()]
         ]);
 
         $user = User::create([
-            'username' => $data['username'],
+            'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password'])
         ]);
@@ -30,7 +30,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect('/dashboard');
+        return redirect('/');
     }
 
     public function showLogin() {
@@ -50,7 +50,7 @@ class AuthController extends Controller
         }
         $request->session()->regenerate();
 
-        return redirect('/dashboard');
+        return redirect('/');
     }
 
     public function logout(Request $request) {
@@ -58,6 +58,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/dashboard');
+        return redirect('/');
     }
 }

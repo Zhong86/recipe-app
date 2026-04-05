@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('quantity', 8, 2);
             $table->enum('unit', array_column(Units::cases(), 'value'));
+            $table->timestamps();
         });
     }
 

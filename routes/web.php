@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RecipeController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/', fn () => redirect('/recipes'));
+Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes/index');
+Route::get('/recipe/{recipe}', [RecipeController::class, 'show']);
 
 Route::middleware('guest')->group(function () {
     //auth
@@ -10,11 +15,18 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
 
-    //recipe
+    //my-recipe
+    Route::get('/my-recipes', [RecipeController::class, '']);
 });
 
 Route::middleware('auth')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/refresh', [AuthController::class, 'refresh']);
+
+    //recipe
+    Route::get('/recipes/create', [RecipeController::class, 'create'])->name('create');
+    Route::post('/recipes/create', [RecipeController::class, 'store']);
+    Route::get('/recipes/update', [RecipeController::class, 'edit']);
+    Route::post('/recipes/update', [RecipeController::class, 'update']);
 });
