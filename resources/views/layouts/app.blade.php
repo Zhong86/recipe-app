@@ -33,7 +33,12 @@
                 <a href="{{ route('login') }}" class="btn-nav btn-outline">Sign in</a>
                 <a href="{{ route('register') }}" class="btn-nav btn-fill">Join</a>
             @else
-                <a href="{{ url('/my-recipes') }}" class="btn-nav btn-outline">My Recipes</a>
+                @if (request()->routeIs('recipes/index'))
+                    <a href="{{ url('/my-recipes') }}" class="btn-nav btn-outline">My Recipes</a>
+                @elseif(request()->routeIs('recipes/user'))
+                    <a href="{{ url('/recipes') }}" class="btn-nav btn-outline">All Recipes</a>
+                @endif
+
                 <a href="{{ url('/recipes/create') }}" class="btn-nav btn-fill">+ New Recipe</a>
 
                 <form action="{{ route('logout') }}" method="POST">

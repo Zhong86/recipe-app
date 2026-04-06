@@ -14,22 +14,61 @@ class RecipeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //display the tags, image,
-        $recipes = Recipe::with(['user', 'ingredients', 'tags'])
-            ->latest()
-            ->paginate(12);
+        $query = Recipe::with(['user', 'ingredients', 'tags'])
+            ->latest();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('title', 'LIKE', "%{$search}%")
+                ->orWhere('description', 'LIKE', "%{$search}%");
+        }
+
+        if ($request->filled('category')) {
+            $search = $request->input('category');
+            $query->where('category', $search);
+        }
+
+        if ($request->filled('tag')) {
+            $tag = $request->input('tag');
+            $query->whereHas('tags', function ($q) use ($tag) {
+                $q->where('name', $tag);
+            });
+        }
+
+        $recipes = $query->paginate(12)->withQueryString();
+
         return view('recipes/index', compact('recipes'));
     }
 
-    public function indexUser() {
-        $recipes = Recipe::where('user_id', auth()->id())
+    public function indexUser(Request $request) {
+        $query = Recipe::where('user_id', auth()->id())
             ->with(['ingredients', 'tags'])
-            ->latest()
-            ->paginate(12);
+            ->latest();
 
-        return view('recipes/index', compact('recipes'));
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('title', 'LIKE', "%{$search}%")
+                ->orWhere('description', 'LIKE', "%{$search}%");
+        }
+
+        if ($request->filled('category')) {
+            $search = $request->input('category');
+            $query->where('category', $search);
+        }
+
+        if ($request->filled('tag')) {
+            $tag = $request->input('tag');
+            $query->whereHas('tags', function ($q) use ($tag) {
+                $q->where('name', $tag);
+            });
+        }
+
+        $recipes = $query->paginate(12)->withQueryString();
+
+        return view('recipes/indexUser', compact('recipes'));
     }
 
     /**
@@ -58,7 +97,7 @@ class RecipeController extends Controller
             'steps'                  => 'required|array|min:1',
             'steps.*'                => 'required|string',
             'tags' => 'nullable|array',
-            'tags.*' => 'string'
+            'tags.*' => 'nullable|string'
         ]);
 
         $imageUrl = '';
@@ -98,7 +137,7 @@ class RecipeController extends Controller
             }
         });
 
-        return redirect()->route('recipes/index')
+        return redirect()->route('recipes/user')
             ->with('success', 'Recipe created successfully');
     }
 
@@ -146,6 +185,8 @@ class RecipeController extends Controller
             'ingredients.*.unit'     => 'required|in:tsp,tbsp,cup,ml,l,g,kg,oz,lb,piece,slice,pinch,bunch',
             'steps'                  => 'required|array|min:1',
             'steps.*'                => 'required|string',
+            'tags' => 'nullable|array',
+            'tags.*' => 'nullable|string'
         ]);
 
         if ($request->hasFile('image')) {
@@ -210,7 +251,7 @@ class RecipeController extends Controller
 
         $recipe->delete();
 
-        return redirect()->route('/')
+        return redirect()->route('recipes/user')
             ->with('success', 'Recipe deleted');
     }
 }
