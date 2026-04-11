@@ -18,6 +18,7 @@ class RecipeController extends Controller
     {
         //display the tags, image,
         $query = Recipe::with(['user', 'ingredients', 'tags'])
+            ->withCount('usersLike')
             ->latest();
 
         if ($request->filled('search')) {
@@ -44,31 +45,55 @@ class RecipeController extends Controller
     }
 
     public function indexUser(Request $request) {
-        $query = Recipe::where('user_id', auth()->id())
-            ->with(['ingredients', 'tags'])
-            ->latest();
+        $userId = auth()->id();
+        $ownRecipe = Recipe::where('user_id', $userId)
+            ->with(['user', 'ingredients', 'tags'])
+            ->withCount('usersLike')
+            ->select('recipes.*');
+        $likedRecipe = Recipe::whereHas('usersLike',
+            fn($q) => $q->where('user_id', $userId))
+            ->with(['user', 'ingredients', 'tags'])
+            ->withCount('usersLike')
+            ->select('recipes.*');
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where('title', 'LIKE', "%{$search}%")
+            $ownRecipe->where('title', 'LIKE', "%{$search}%")
+                ->orWhere('description', 'LIKE', "%{$search}%");
+            $likedRecipe->where('title', 'LIKE', "%{$search}%")
                 ->orWhere('description', 'LIKE', "%{$search}%");
         }
 
         if ($request->filled('category')) {
             $search = $request->input('category');
-            $query->where('category', $search);
+            $ownRecipe->where('category', $search);
+            $likedRecipe->where('category', $search);
         }
 
         if ($request->filled('tag')) {
             $tag = $request->input('tag');
-            $query->whereHas('tags', function ($q) use ($tag) {
+            $ownRecipe->whereHas('tags', function ($q) use ($tag) {
+                $q->where('name', $tag);
+            });
+            $likedRecipe->whereHas('tags', function ($q) use ($tag) {
                 $q->where('name', $tag);
             });
         }
 
-        $recipes = $query->paginate(12)->withQueryString();
+        $recipes = $likedRecipe->union($ownRecipe)
+            ->latest()
+            ->paginate(12)->withQueryString();
 
         return view('recipes/indexUser', compact('recipes'));
+    }
+
+    public function toggleLike(Recipe $recipe) {
+        auth()->user()->likedRecipes()->toggle($recipe);
+        $isLiked = auth()->user()->likedRecipes->contains($recipe);
+        return response()->json([
+            'is_liked' => $isLiked,
+            'likes_count' => $recipe->usersLike()->count()
+        ]);
     }
 
     /**
@@ -102,9 +127,8 @@ class RecipeController extends Controller
 
         $imageUrl = '';
         if ($request->hasFile('image')) {
-            $imageUrl = Storage::disk('s3')->url(
-                Storage::disk('s3')->putFile('recipes', $request->file('image'), 'public')
-            );
+            $path = Storage::disk('s3')->putFile('recipes', $request->file('image'));
+            $imageUrl = Storage::disk('s3')->url($path);
         }
 
         DB::transaction(function() use ($data, $imageUrl) {

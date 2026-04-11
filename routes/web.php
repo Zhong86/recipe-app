@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecipeController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,4 +31,12 @@ Route::middleware('auth')->group(function () {
 
     //my-recipe
     Route::get('/my-recipes', [RecipeController::class, 'indexUser'])->name('recipes/user');
+    Route::post('/recipes/{recipe}/toggle-like', [RecipeController::class, 'toggleLike']);
+
+    //profile
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::post('/profile/name', [ProfileController::class, 'updateName'])->name('profile.name');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
 });

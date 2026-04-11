@@ -16,6 +16,7 @@ class RecipeSeeder extends Seeder
         $user = User::first() ?? User::factory()->create([
             'name' => 'test',
             'email' => 'test@gmail.com',
+            'password' => bcrypt('password')
         ]);
 
         $this->createClassicPancakes($user->id);
