@@ -170,9 +170,6 @@ class RecipeController extends Controller
      */
     public function show(Recipe $recipe)
     {
-        if ($recipe->user_id !== auth()->id()) {
-            abort(403);
-        }
         $recipe->load(['user', 'ingredients', 'steps', 'reviews.user', 'tags']);
 
         return response()
@@ -189,7 +186,9 @@ class RecipeController extends Controller
             ->findOrFail($id);
         if($recipe->user_id !== auth()->id()) abort(403);
 
-        return view('recipes/create', compact('recipe'));
+        return response()
+            ->view('recipes/create', compact('recipe'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     /**

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'RecipeBook') }} — @yield('title', 'Home')</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -203,7 +204,7 @@
                     <a href="{{ url('/recipes') }}" class="btn-nav btn-outline">All Recipes</a>
                 @endif
                 <a href="{{ url('/recipes/create') }}" class="btn-nav btn-fill">+ New Recipe</a>
-<a href="{{ url('/profile') }}" class="btn-nav btn-outline">Profile</a>
+                <a href="{{ url('/profile') }}" class="btn-nav btn-outline">Profile</a>
 
             @endguest
         </div>

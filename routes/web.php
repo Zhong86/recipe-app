@@ -3,11 +3,13 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect('/recipes'));
 Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes/index');
 Route::get('/recipe/{recipe}', [RecipeController::class, 'show']);
+Route::get('/review/{recipe}', [ReviewController::class, 'index']);
 
 Route::middleware('guest')->group(function () {
     //auth
@@ -32,6 +34,11 @@ Route::middleware('auth')->group(function () {
     //my-recipe
     Route::get('/my-recipes', [RecipeController::class, 'indexUser'])->name('recipes/user');
     Route::post('/recipes/{recipe}/toggle-like', [RecipeController::class, 'toggleLike']);
+
+    //Review
+    Route::post('/recipes/{recipe}/review', [ReviewController::class, 'store']);
+    Route::put('/recipes/{recipe}/review/{reviewId}', [ReviewController::class, 'update']);
+    Route::delete('/recipes/{recipeId}/review/{reviewId}', [ReviewController::class, 'destroy']);
 
     //profile
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');

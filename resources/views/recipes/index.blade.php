@@ -11,8 +11,7 @@
             Food made with<br><em>love & intention</em>
         </h1>
         <p class="hero-sub">
-            Thousands of home-cooked recipes from real people.
-            Find your next favourite meal.
+            Discover new recipes. Share your own recipes.
         </p>
 
         <form action="{{ url('/recipes') }}" method="GET" class="search-bar">
@@ -21,7 +20,7 @@
             @endif
             <input type="text" name="q" placeholder="Search recipes, ingredients, cuisines…"
                 value="{{ request('q') }}" autocomplete="off">
-            <button type="submit">Search</button>
+            <button type="submit" >Search</button>
         </form>
     </section>
 
@@ -104,7 +103,6 @@
 
         {{-- ── All / Filtered Recipes ─────────────────────── --}}
         <div class="section-head">
-        <pre>{{ request()->path() }}</pre>
             <h2>
                 @if (request('q'))
                     Results for <em>"{{ request('q') }}"</em>
