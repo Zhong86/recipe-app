@@ -266,12 +266,22 @@ body {
     color: var(--terra-light);
 }
 
-.hero-sub {
+.hero-sub-signin {
     font-size: 1rem;
     font-weight: 300;
     color: rgba(237, 227, 212, 0.6);
     max-width: 480px;
     margin: 0 auto 2.5rem;
+    line-height: 1.7;
+    position: relative;
+}
+
+.hero-sub {
+    font-size: 1rem;
+    font-weight: 300;
+    color: rgba(237, 227, 212, 0.6);
+    max-width: 480px;
+    margin: 0 auto 1rem;
     line-height: 1.7;
     position: relative;
 }

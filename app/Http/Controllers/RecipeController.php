@@ -21,8 +21,8 @@ class RecipeController extends Controller
             ->withCount('usersLike')
             ->latest();
 
-        if ($request->filled('search')) {
-            $search = $request->input('search');
+        if ($request->filled('q')) {
+            $search = $request->input('q');
             $query->where('title', 'LIKE', "%{$search}%")
                 ->orWhere('description', 'LIKE', "%{$search}%");
         }
@@ -56,8 +56,8 @@ class RecipeController extends Controller
             ->withCount('usersLike')
             ->select('recipes.*');
 
-        if ($request->filled('search')) {
-            $search = $request->input('search');
+        if ($request->filled('q')) {
+            $search = $request->input('q');
             $ownRecipe->where('title', 'LIKE', "%{$search}%")
                 ->orWhere('description', 'LIKE', "%{$search}%");
             $likedRecipe->where('title', 'LIKE', "%{$search}%")

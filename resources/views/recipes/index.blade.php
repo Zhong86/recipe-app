@@ -13,14 +13,17 @@
         <p class="hero-sub">
             Discover new recipes. Share your own recipes.
         </p>
-
+        <p class="hero-sub-signin">
+            <a href="{{ route('register') }}" style="color: var(--terra)">Sign in</a>
+            to add recipes
+        </p>
         <form action="{{ url('/recipes') }}" method="GET" class="search-bar">
             @if (request('category'))
                 <input type="hidden" name="category" value="{{ request('category') }}">
             @endif
             <input type="text" name="q" placeholder="Search recipes, ingredients, cuisines…"
                 value="{{ request('q') }}" autocomplete="off">
-            <button type="submit" >Search</button>
+            <button type="submit">Search</button>
         </form>
     </section>
 
@@ -146,7 +149,7 @@
                             @endif
 
                             <div class="recipe-card-footer">
-                               <div class="recipe-card-author">
+                                <div class="recipe-card-author">
                                     <div class="avatar">
                                         {{ strtoupper(substr($recipe->user->name ?? 'A', 0, 2)) }}
                                     </div>
@@ -215,25 +218,25 @@
 @endsection
 
 @push('scripts')
-<script>
-function toggleLike(event) {
-    event.preventDefault();
-    const btn = event.target;
-    const recipeId = btn.dataset.recipeId;
+    <script>
+        function toggleLike(event) {
+            event.preventDefault();
+            const btn = event.target;
+            const recipeId = btn.dataset.recipeId;
 
-    fetch(`/recipes/${recipeId}/toggle-like`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
+            fetch(`/recipes/${recipeId}/toggle-like`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btn.innerHTML = data.is_liked ? '♥' : '♡';
+                    btn.classList.toggle('liked', data.is_liked);
+                })
+                .catch(err => console.error('Toggle failed', err));
         }
-    })
-        .then(res => res.json())
-        .then(data => {
-            btn.innerHTML = data.is_liked ? '♥' : '♡';
-            btn.classList.toggle('liked', data.is_liked);
-        })
-        .catch(err => console.error('Toggle failed', err));
-}
-</script>
+    </script>
 @endpush
