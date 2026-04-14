@@ -24,6 +24,7 @@
                 </nav>
 
                 <span class="card-badge">{{ ucfirst($recipe->category) }}</span>
+                <span class="card-badge">{{ $recipe->is_public ? 'Public' : 'Private' }}</span>
 
                 <h1 class="recipe-hero-title">{{ $recipe->title }}</h1>
 
@@ -97,6 +98,18 @@
                     transition:all 0.2s;">
                                 {{ !$isLiked ? '♥︎ Save Recipe' : 'Remove from Saved Recipes' }}
                             </button>
+                            <a href="{{ url('/recipes/' . $recipe->id . '/edit') }}"
+                                style="display:inline-flex; align-items:center; gap:0.5rem;
+                    font-family:'DM Sans',sans-serif; font-size:0.8rem;
+                    font-weight:500; letter-spacing:0.08em; text-transform:uppercase;
+                    padding:0.6rem 1.4rem; border-radius:2px; text-decoration:none;
+                    background:rgba(255,255,255,0.1); color:var(--cream);
+                    border:1px solid rgba(255,255,255,0.25);
+                    backdrop-filter:blur(6px);
+                    transition:all 0.2s;">
+                                ✏️ Fork Recipe
+                            </a>
+
                             <a href="{{ url('/recipes/' . $recipe->id . '/edit') }}"
                                 style="display:inline-flex; align-items:center; gap:0.5rem;
                     font-family:'DM Sans',sans-serif; font-size:0.8rem;

@@ -637,6 +637,20 @@ body {
     transform: scale(1.15);
 }
 
+.recipe-card-view {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: white;
+    color: var(--terra);
+    padding: 0.25rem 0.6rem;
+    border-radius: 2px;
+}
+
 .recipe-card-body { padding: 1.1rem 1.25rem 1.25rem; }
 
 .recipe-card-title {
@@ -1963,7 +1977,7 @@ Single Recipe Page
 
 .form-input:focus,
 .form-select:focus,
-.form-textarea:focus {
+.form-textarea:focus {app.css
     border-color: var(--terra);
     box-shadow: 0 0 0 3px rgba(192, 96, 58, .1);
 }

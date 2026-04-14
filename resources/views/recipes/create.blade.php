@@ -324,18 +324,30 @@
                                     or comma to add</p>
                             </div>
                         </div>
-
                     </div>{{-- end main --}}
 
                     {{-- ── RIGHT: Sidebar ─────────────────────────── --}}
                     <aside class="form-sidebar">
-
                         <div class="sidebar-publish">
-                            <div class="publish-title">{{ isset($recipe) ? 'Save Changes' : 'Publish Recipe' }}</div>
+                            <div class="publish-title">
+                                {{ isset($recipe) ? 'Save Changes' : 'Publish Recipe' }}
+                            </div>
+
+                            <div class="form-field" style="margin-bottom:1rem">
+                                <select id="is_public" name="is_public" class="form-select" onchange="updateVisibilityText()">
+                                    <option value="true">
+                                        Public
+                                    </option>
+                                    <option value="false">
+                                        Private
+                                    </option>
+                                </select>
+                            </div>
 
                             <div class="publish-meta">
                                 <div class="dot"></div>
-                                <span>{{ isset($recipe) ? 'Updating existing recipe' : 'Visible to all visitors once published' }}</span>
+                                <span
+                                    id="visibility-text">{{ isset($recipe) ? 'Updating existing recipe' : 'Visible to all visitors once published' }}</span>
                             </div>
 
                             <button type="submit" class="btn-submit">
@@ -548,6 +560,18 @@
             document.getElementById('ingredients-body').addEventListener('input', updateChecklist);
             document.getElementById('steps-container').addEventListener('input', updateChecklist);
             updateChecklist();
+
+            function updateVisibilityText() {
+                const select = document.getElementById('is_public');
+                const textSpan = document.getElementById('visibility-text');
+                const isPublic = select.value === 'true';
+
+                if (isPublic) {
+                    textSpan.textContent = 'Visible to all visitors once published';
+                } else {
+                    textSpan.textContent = 'Visible only to you';
+                }
+            }
         </script>
     @endpush
 

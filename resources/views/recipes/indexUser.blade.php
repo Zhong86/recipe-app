@@ -131,13 +131,16 @@
                                 </div>
                             @endif
                             <span class="recipe-card-cat">{{ ucfirst($recipe->category) }}</span>
-                            @auth
                                 @php $isLiked = auth()->user()->likedRecipes->contains($recipe); @endphp
                                 <button class="recipe-card-fav {{ $isLiked ? 'liked' : '' }}" title="Save to favourites"
                                     data-recipe-id="{{ $recipe->id }}" onclick="toggleLike(event)">
                                     {{ $isLiked ? '♥' : '♡' }}
-                                </button>
-                            @endauth
+                </button>
+
+                    @php $isPublic = $recipe->is_public; @endphp
+                <span class="recipe-card-view">
+                    {{ $isPublic ? 'Public' : 'Private' }}
+                </span>
                         </div>
 
                         <div class="recipe-card-body">

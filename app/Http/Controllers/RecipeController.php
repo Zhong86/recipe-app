@@ -11,6 +11,24 @@ use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class RecipeController extends Controller
 {
+    public $validations = [
+        'title'                  => 'required|string|max:255',
+        'description'            => 'nullable|string',
+        'cook_time'              => 'required|integer|min:1',
+        'serving'                => 'required|integer|min:1',
+        'category'               => 'required|in:breakfast,lunch,dinner,snack,dessert,drink',
+        'image'                  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        'ingredients'            => 'required|array|min:1',
+        'ingredients.*.name'     => 'required|string',
+        'ingredients.*.quantity' => 'required|numeric|min:0',
+        'ingredients.*.unit'     => 'required|in:tsp,tbsp,cup,ml,l,g,kg,oz,lb,piece,slice,pinch,bunch',
+        'steps'                  => 'required|array|min:1',
+        'steps.*'                => 'required|string',
+        'tags' => 'nullable|array',
+        'tags.*' => 'nullable|string',
+        'is_public' => 'required|in:true,false'
+    ];
+
     /**
      * Display a listing of the resource.
      */
@@ -18,6 +36,7 @@ class RecipeController extends Controller
     {
         //display the tags, image,
         $query = Recipe::with(['user', 'ingredients', 'tags'])
+            ->where('is_public', true)
             ->withCount('usersLike')
             ->latest();
 
@@ -109,21 +128,7 @@ class RecipeController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'cook_time'   => 'required|integer',
-            'serving'     => 'required|integer',
-            'category'    => 'required|in:breakfast,lunch,dinner,snack,dessert,drink',
-            'ingredients'           => 'required|array|min:1',
-            'ingredients.*.name'    => 'required|string',
-            'ingredients.*.quantity'=> 'required|numeric',
-            'ingredients.*.unit'    => 'required|in:tsp,tbsp,cup,ml,l,g,kg,oz,lb,piece,slice,pinch,bunch',
-            'steps'                  => 'required|array|min:1',
-            'steps.*'                => 'required|string',
-            'tags' => 'nullable|array',
-            'tags.*' => 'nullable|string'
-        ]);
+        $data = $request->validate($this->validations);
 
         $imageUrl = '';
         if ($request->hasFile('image')) {
@@ -139,7 +144,8 @@ class RecipeController extends Controller
                 'cook_time' => $data['cook_time'],
                 'serving' => $data['serving'],
                 'category' => $data['category'],
-                'image_url' =>  $imageUrl
+                'image_url' =>  $imageUrl,
+                'is_public' => $data['is_public'] === 'true'
             ]);
 
             foreach($data['ingredients'] as $ingredient) {
@@ -170,6 +176,8 @@ class RecipeController extends Controller
      */
     public function show(Recipe $recipe)
     {
+        if (!$recipe->is_public && $recipe->user_id !== auth()->id()) abort(403);
+
         $recipe->load(['user', 'ingredients', 'steps', 'reviews.user', 'tags']);
 
         return response()
@@ -200,22 +208,7 @@ class RecipeController extends Controller
 
         if ($recipe->user_id !== auth()->id()) abort(403);
 
-        $data = $request->validate([
-            'title'                  => 'required|string|max:255',
-            'description'            => 'nullable|string',
-            'cook_time'              => 'required|integer|min:1',
-            'serving'                => 'required|integer|min:1',
-            'category'               => 'required|in:breakfast,lunch,dinner,snack,dessert,drink',
-            'image'                  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'ingredients'            => 'required|array|min:1',
-            'ingredients.*.name'     => 'required|string',
-            'ingredients.*.quantity' => 'required|numeric|min:0',
-            'ingredients.*.unit'     => 'required|in:tsp,tbsp,cup,ml,l,g,kg,oz,lb,piece,slice,pinch,bunch',
-            'steps'                  => 'required|array|min:1',
-            'steps.*'                => 'required|string',
-            'tags' => 'nullable|array',
-            'tags.*' => 'nullable|string'
-        ]);
+        $data = $request->validate($this->validations);
 
         if ($request->hasFile('image')) {
             if($recipe->image_url) {
@@ -234,7 +227,8 @@ class RecipeController extends Controller
                 'cook_time' => $data['cook_time'],
                 'serving' => $data['serving'],
                 'category' => $data['category'],
-                'image_url' => $data['image_url'] ?? $recipe->image_url
+                'image_url' => $data['image_url'] ?? $recipe->image_url,
+                'is_public' => $data['is_public'] === 'true'
             ]);
 
             $recipe->ingredients()->delete();
@@ -263,6 +257,22 @@ class RecipeController extends Controller
 
         return redirect(url('/recipe/'.$recipe->id));
     }
+
+    public function fork(Request $request, string $id) {
+        $recipe = Recipe::findOrFail($id);
+        $data = $request->validate($this->validations);
+
+        //check if image is the same, if YES prompt to change
+        $imageUrl = '';
+        if($request->hasFile('image')) {
+
+        }
+        //check if steps are all the same
+
+        DB::transaction(function() use ($data, $imageUrl) {
+        });
+    }
+
 
     /**
      * Remove the specified resource from storage.

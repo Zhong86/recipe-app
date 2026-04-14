@@ -13,10 +13,12 @@
         <p class="hero-sub">
             Discover new recipes. Share your own recipes.
         </p>
-        <p class="hero-sub-signin">
-            <a href="{{ route('register') }}" style="color: var(--terra)">Sign in</a>
-            to add recipes
-        </p>
+        @guest
+            <p class="hero-sub-signin">
+                <a href="{{ route('register') }}" style="color: var(--terra)">Sign in</a>
+                to add recipes
+            </p>
+        @endguest
         <form action="{{ url('/recipes') }}" method="GET" class="search-bar">
             @if (request('category'))
                 <input type="hidden" name="category" value="{{ request('category') }}">
