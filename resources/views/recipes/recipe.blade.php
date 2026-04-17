@@ -25,6 +25,16 @@
 
                 <span class="card-badge">{{ ucfirst($recipe->category) }}</span>
                 <span class="card-badge">{{ $recipe->is_public ? 'Public' : 'Private' }}</span>
+                @if ($recipe->forkedFrom)
+                    <span class="card-badge">
+                        🍴 Forked from
+                        <a style="color: var(--cream)" href="{{ url("/recipe/{$recipe->forkedFrom->original->id}") }}">
+                            {{ $recipe->forkedFrom->original->user->name }}
+                        </a>
+                    </span>
+                @endif
+
+
 
                 <h1 class="recipe-hero-title">{{ $recipe->title }}</h1>
 
@@ -84,11 +94,10 @@
                     </div>
                 </div>
                 @auth
-                    @if (auth()->id() === $recipe->user_id)
-                        <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
-                            @php $isLiked = auth()->user()->likedRecipes->contains($recipe); @endphp
-                            <button onclick="toggleLike(event)" data-recipe-id="{{ $recipe->id }}"
-                                style="display:inline-flex; align-items:center; gap:0.5rem;
+                    @php $isLiked = auth()->user()->likedRecipes->contains($recipe); @endphp
+                    <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+                        <button onclick="toggleLike(event)" data-recipe-id="{{ $recipe->id }}"
+                            style="display:inline-flex; align-items:center; gap:0.5rem;
                     font-family:'DM Sans',sans-serif; font-size:0.8rem;
                     font-weight:500; letter-spacing:0.08em; text-transform:uppercase;
                     padding:0.6rem 1.4rem; border-radius:2px; text-decoration:none;
@@ -96,20 +105,9 @@
                     border:1px solid rgba(255,255,255,0.25);
                     backdrop-filter:blur(6px);
                     transition:all 0.2s;">
-                                {{ !$isLiked ? '♥︎ Save Recipe' : 'Remove from Saved Recipes' }}
-                            </button>
-                            <a href="{{ url('/recipes/' . $recipe->id . '/edit') }}"
-                                style="display:inline-flex; align-items:center; gap:0.5rem;
-                    font-family:'DM Sans',sans-serif; font-size:0.8rem;
-                    font-weight:500; letter-spacing:0.08em; text-transform:uppercase;
-                    padding:0.6rem 1.4rem; border-radius:2px; text-decoration:none;
-                    background:rgba(255,255,255,0.1); color:var(--cream);
-                    border:1px solid rgba(255,255,255,0.25);
-                    backdrop-filter:blur(6px);
-                    transition:all 0.2s;">
-                                ✏️ Fork Recipe
-                            </a>
-
+                            {{ !$isLiked ? '♥︎ Save Recipe' : 'Remove from Saved Recipes' }}
+                        </button>
+                        @if (auth()->id() === $recipe->user_id)
                             <a href="{{ url('/recipes/' . $recipe->id . '/edit') }}"
                                 style="display:inline-flex; align-items:center; gap:0.5rem;
                     font-family:'DM Sans',sans-serif; font-size:0.8rem;
@@ -137,8 +135,20 @@
                                     🗑 Delete
                                 </button>
                             </form>
-                        </div>
-                    @endif
+                        @else
+                            <a href="{{ url('/recipes/' . $recipe->id . '/fork') }}"
+                                style="display:inline-flex; align-items:center; gap:0.5rem;
+                    font-family:'DM Sans',sans-serif; font-size:0.8rem;
+                    font-weight:500; letter-spacing:0.08em; text-transform:uppercase;
+                    padding:0.6rem 1.4rem; border-radius:2px; text-decoration:none;
+                    background:rgba(255,255,255,0.1); color:var(--cream);
+                    border:1px solid rgba(255,255,255,0.25);
+                    backdrop-filter:blur(6px);
+                    transition:all 0.2s;">
+                                🍴Fork Recipe
+                            </a>
+                        @endif
+                    </div>
                 @endauth
             </div>
         </div>
@@ -254,7 +264,7 @@
                     {{-- Write a review --}}
                     @auth
                         @if (!$recipe->reviews->where('user_id', auth()->id())->count())
-                            <form action="{{url("/recipes/{$recipe->id}/review") }}" method="POST" class="review-form">
+                            <form action="{{ url("/recipes/{$recipe->id}/review") }}" method="POST" class="review-form">
                                 @csrf
                                 <div class="review-form-head">Leave a review</div>
 
@@ -324,7 +334,8 @@
                                                                 title="Edit review">Edit</button>
 
                                                             {{-- Delete button --}}
-                                                            <form action="{{ url("/recipes/{$recipe->id}/review/{$review->id}") }}"
+                                                            <form
+                                                                action="{{ url("/recipes/{$recipe->id}/review/{$review->id}") }}"
                                                                 method="POST"
                                                                 onsubmit="return confirm('Delete this review?')">
                                                                 @csrf

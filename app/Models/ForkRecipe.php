@@ -4,15 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ForkRecipe extends Model
 {
     use HasFactory;
 
-    protected $table = 'forked_recipes';
+    protected $table = 'fork_recipes';
 
     protected $fillable = [
-        'recipe_id',
-        'forked_user_id'
+        'original_recipe_id',
+        'forked_recipe_id',
     ];
+
+    public function original(): BelongsTo {
+        return $this->belongsTo(Recipe::class, 'original_recipe_id');
+    }
+
+    public function forkedRecipe(): BelongsTo {
+        return $this->belongsTo(Recipe::class, 'forked_recipe_id');
+    }
 }

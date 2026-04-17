@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Recipe extends Model
 {
@@ -52,5 +52,13 @@ class Recipe extends Model
 
     public function tags(): BelongsToMany {
         return $this->belongsToMany(Tag::class, 'recipe_tag');
+    }
+
+    public function forkedFrom(): HasOne {
+        return $this->hasOne(ForkRecipe::class, 'forked_recipe_id');
+    }
+
+    public function forks(): HasMany {
+        return $this->hasMany(ForkRecipe::class, 'recipe_id');
     }
 }

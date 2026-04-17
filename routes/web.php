@@ -30,7 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/recipes/{recipe}/edit', [RecipeController::class, 'edit']);
     Route::put('/recipes/{recipe}/update', [RecipeController::class, 'update']);
     Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy']);
-    Route::get('/recipes/{recipe}/fork', [RecipeController::class, 'edit']);
+    Route::get('/recipes/{recipe}/fork', [RecipeController::class, 'showFork']);
+    Route::post('/recipes/{recipe}/fork', [RecipeController::class, 'storeFork']);
 
     //my-recipe
     Route::get('/my-recipes', [RecipeController::class, 'indexUser'])->name('recipes/user');

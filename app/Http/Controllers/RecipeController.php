@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ForkRecipe;
 use App\Models\Recipe;
 use App\Models\Tag;
 use Illuminate\Http\Request;
@@ -178,7 +179,7 @@ class RecipeController extends Controller
     {
         if (!$recipe->is_public && $recipe->user_id !== auth()->id()) abort(403);
 
-        $recipe->load(['user', 'ingredients', 'steps', 'reviews.user', 'tags']);
+        $recipe->load(['user', 'ingredients', 'steps', 'reviews.user', 'tags', 'forkedFrom.original.user']);
 
         return response()
             ->view('recipes/recipe', compact('recipe'))
@@ -258,8 +259,16 @@ class RecipeController extends Controller
         return redirect(url('/recipe/'.$recipe->id));
     }
 
-    public function fork(Request $request, string $id) {
-        $recipe = Recipe::findOrFail($id);
+    public function showFork(string $id) {
+        $recipe = Recipe::with(['ingredients', 'steps', 'tags'])->findOrFail($id);
+
+        return response()
+            ->view('recipes/create', compact('recipe'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    public function storeFork(Request $request, string $id) {
+        $original = Recipe::findOrFail($id);
         $data = $request->validate($this->validations);
 
         //check if image is the same, if YES prompt to change
@@ -267,12 +276,52 @@ class RecipeController extends Controller
         if($request->hasFile('image')) {
 
         }
+
         //check if steps are all the same
+        $originalSteps = $original->steps->sortBy('order')->pluck('instruction')->toArray();
+        $submittedSteps = array_values($data['steps']);
 
-        DB::transaction(function() use ($data, $imageUrl) {
+        if ($originalSteps === $submittedSteps) {
+            return back()
+                ->withInput()
+                ->withErrors(['steps' => 'Your forked recipe must have at least one step changed from the original.']);
+        }
+
+        DB::transaction(function() use ($data, $imageUrl, $original) {
+            $forkedRecipe = Recipe::create([
+                'user_id'     => auth()->id(),
+                'title'       => $data['title'],
+                'description' => $data['description'] ?? null,
+                'cook_time'   => $data['cook_time'],
+                'serving'     => $data['serving'],
+                'category'    => $data['category'],
+                'image_url'   => $imageUrl,
+            ]);
+
+            foreach ($data['ingredients'] as $ingredient) {
+                $forkedRecipe->ingredients()->create($ingredient);
+            }
+            foreach ($data['steps'] as $order => $instruction) {
+                $forkedRecipe->steps()->create([
+                    'order'       => $order + 1,
+                    'instruction' => $instruction,
+                ]);
+            }
+
+            if (!empty($data['tags'])) {
+                $tagIds = collect($data['tags'])->map(fn($name) => Tag::firstOrCreate(['name' => $name])->id);
+                $forkedRecipe->tags()->sync($tagIds);
+            }
+
+            // Record the fork relationship
+            ForkRecipe::create([
+                'original_recipe_id'        => $original->id,
+                'forked_recipe_id' => $forkedRecipe->id,
+            ]);
         });
-    }
 
+        return redirect()->route('recipes/user')->with('success', 'Recipe forked successfully!');
+    }
 
     /**
      * Remove the specified resource from storage.

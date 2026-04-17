@@ -11,7 +11,10 @@
                 {{ isset($recipe) ? 'Edit Recipe' : 'New Recipe' }}
             </div>
             <h1 class="form-hero-title">
-                {{ isset($recipe) ? 'Update your recipe' : 'Share your creation' }}
+                {{ isset($recipe)
+                    ? auth()->id() === $recipe->user_id
+                        ? 'Update your recipe' : "Update {$recipe->user->name}'s recipe"
+                    : 'Share your creation' }}
             </h1>
         </div>
     </div>
@@ -30,10 +33,16 @@
                 </div>
             @endif
 
-            <form action="{{ isset($recipe) ? url('/recipes/' . $recipe->id . '/update') : url('/recipes/create') }}"
+            <form action="{{
+            isset($recipe)
+            ? (auth()->id() === $recipe->user_id)
+                ? url('/recipes/' . $recipe->id . '/update')
+                : url('/recipes/' . $recipe->id . '/fork')
+            : url('/recipes/create')
+            }}"
                 method="POST" enctype="multipart/form-data" id="recipe-form" novalidate>
                 @csrf
-                @if (isset($recipe))
+                @if(auth()->id() === $recipe->user_id)
                     @method('PUT')
                 @endif
 
@@ -383,7 +392,7 @@
                             </ul>
                         </div>
 
-                        @if (isset($recipe))
+                        @if ((auth()->id() === $recipe->user_id))
                             <div class="sidebar-publish" style="border-color:#FFCDD2;">
                                 <div class="publish-title" style="color:#C62828;border-color:#FFCDD2;">Danger Zone</div>
                                 <button type="submit" class="btn-cancel" form="delete-recipe-form"
