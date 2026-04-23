@@ -132,12 +132,16 @@ class RecipeController extends Controller
         $data = $request->validate($this->validations);
 
         $imageUrl = '';
+        $imageHash = '';
         if ($request->hasFile('image')) {
-            $path = Storage::disk('s3')->putFile('recipes', $request->file('image'));
+            $file = $request->file('image');
+            $imageHash = md5_file($file->getRealPath());
+
+            $path = Storage::disk('s3')->putFile('recipes', $file);
             $imageUrl = Storage::disk('s3')->url($path);
         }
 
-        DB::transaction(function() use ($data, $imageUrl) {
+        DB::transaction(function() use ($data, $imageHash, $imageUrl) {
             $recipe = Recipe::create([
                 'user_id' => auth()->id(),
                 'title' => $data['title'],
@@ -146,6 +150,7 @@ class RecipeController extends Controller
                 'serving' => $data['serving'],
                 'category' => $data['category'],
                 'image_url' =>  $imageUrl,
+                'image_hash' => $imageHash ?? null,
                 'is_public' => $data['is_public'] === 'true'
             ]);
 
@@ -216,8 +221,10 @@ class RecipeController extends Controller
                 Storage::disk('s3')->delete(parse_url($recipe->image_url, PHP_URL_PATH));
             }
 
+            $file = $request->file('image');
+            $data['image_hash'] = md5_file($file->getRealPath());
             $data['image_url'] = Storage::disk('s3')->url(
-                Storage::disk('s3')->putFile('recipes', $request->file('image'), 'public')
+                Storage::disk('s3')->putFile('recipes', $file, 'public')
             );
         }
 
@@ -229,6 +236,7 @@ class RecipeController extends Controller
                 'serving' => $data['serving'],
                 'category' => $data['category'],
                 'image_url' => $data['image_url'] ?? $recipe->image_url,
+                'image_hash' => $data['image_hash'] ?? $recipe->image_hash,
                 'is_public' => $data['is_public'] === 'true'
             ]);
 
@@ -271,10 +279,28 @@ class RecipeController extends Controller
         $original = Recipe::findOrFail($id);
         $data = $request->validate($this->validations);
 
-        //check if image is the same, if YES prompt to change
-        $imageUrl = '';
-        if($request->hasFile('image')) {
+        $imageUrl  = $original->image_url;
+        $imageHash = null;
 
+        if(!$request->hasFile('image') && $original->image_hash) {
+            return back()
+                ->withInput()
+                ->withErrors(['image' => 'Please use your own image for this forked recipe']);
+        }
+
+        if($request->hasFile('image')) {
+            $file = $request->file('image');
+            $uploadedHash = md5_file($file->getRealPath());
+
+            if ($uploadedHash === $original->image_hash) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['image' => 'Please use your own image for this forked recipe']);
+            }
+            $imageHash = $uploadedHash;
+            $imageUrl  = Storage::disk('s3')->url(
+                Storage::disk('s3')->putFile('recipes', $file, 'public')
+            );
         }
 
         //check if steps are all the same
@@ -287,7 +313,7 @@ class RecipeController extends Controller
                 ->withErrors(['steps' => 'Your forked recipe must have at least one step changed from the original.']);
         }
 
-        DB::transaction(function() use ($data, $imageUrl, $original) {
+        DB::transaction(function() use ($data, $imageHash, $imageUrl, $original) {
             $forkedRecipe = Recipe::create([
                 'user_id'     => auth()->id(),
                 'title'       => $data['title'],
@@ -296,6 +322,7 @@ class RecipeController extends Controller
                 'serving'     => $data['serving'],
                 'category'    => $data['category'],
                 'image_url'   => $imageUrl,
+                'image_hash' => $imageHash
             ]);
 
             foreach ($data['ingredients'] as $ingredient) {

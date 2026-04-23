@@ -42,7 +42,7 @@
             }}"
                 method="POST" enctype="multipart/form-data" id="recipe-form" novalidate>
                 @csrf
-                @if(auth()->id() === $recipe->user_id)
+                @if(isset($recipe) && (auth()->id() === $recipe->user_id))
                     @method('PUT')
                 @endif
 
@@ -392,7 +392,7 @@
                             </ul>
                         </div>
 
-                        @if ((auth()->id() === $recipe->user_id))
+                        @if (isset($recipe) && (auth()->id() === $recipe->user_id))
                             <div class="sidebar-publish" style="border-color:#FFCDD2;">
                                 <div class="publish-title" style="color:#C62828;border-color:#FFCDD2;">Danger Zone</div>
                                 <button type="submit" class="btn-cancel" form="delete-recipe-form"

@@ -23,6 +23,7 @@ class Recipe extends Model
         'serving',
         'category',
         'image_url',
+        'image_hash',
         'is_public'
     ];
 
