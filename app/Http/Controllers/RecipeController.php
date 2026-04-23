@@ -224,7 +224,7 @@ class RecipeController extends Controller
             $file = $request->file('image');
             $data['image_hash'] = md5_file($file->getRealPath());
             $data['image_url'] = Storage::disk('s3')->url(
-                Storage::disk('s3')->putFile('recipes', $file, 'public')
+                Storage::disk('s3')->putFile('recipes', $file)
             );
         }
 
@@ -299,7 +299,7 @@ class RecipeController extends Controller
             }
             $imageHash = $uploadedHash;
             $imageUrl  = Storage::disk('s3')->url(
-                Storage::disk('s3')->putFile('recipes', $file, 'public')
+                Storage::disk('s3')->putFile('recipes', $file)
             );
         }
 
